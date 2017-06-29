@@ -38,7 +38,7 @@ log.info "========================================="
 
 Channel
         .fromFilePairs(FOLDER + "/*_R{1,2}_001.fastq.gz", flat: true)
-        .map { prefix, file1, file2 ->  tuple(prefix.substring(0,9), file1, file2) }
+        .map { prefix, file1, file2 ->  tuple(prefix.substring(0,6), file1, file2) }
         .groupTuple()
         .into { inputMerge }
 
@@ -66,7 +66,7 @@ process Merge {
 process Trimmomatic {
 
    tag "${id}"
-   publishDir "${OUTDIR}/${organism}", mode: 'copy'
+   publishDir "${OUTDIR}/trimmomatic", mode: 'copy'
 
    input:
    set id,file(left_reads),file(right_reads) from inputTrimmomatic
@@ -75,8 +75,6 @@ process Trimmomatic {
    set id,file("${id}_R1_paired.fastq.gz"), file("${id}_R2_paired.fastq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan
 
    script:
-
-   organism = file("${OUTDIR}/Data/${id}/${id}.species").text.trim()   
 
     """
         java -jar ${TRIMMOMATIC}/trimmomatic-0.36.jar PE -threads 8 $left_reads $right_reads \
