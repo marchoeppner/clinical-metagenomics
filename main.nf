@@ -9,6 +9,10 @@ METAPHLAN=file(params.metaphlan)
 METAPHLAN_PKL=file(params.metaphlan_pkl)
 METAPHLAN_DB=params.metaphlan_db
 
+KAIJU=file(params.kaiju)
+KAIJU_REPORT=file(params.kaiju_report)
+KAIJU_DB=params.kaiju_db
+
 FASTQC=file(params.fastqc)
 
 TRIMMOMATIC = params.trimmomatic
@@ -72,7 +76,7 @@ process Trimmomatic {
    set id,file(left_reads),file(right_reads) from inputTrimmomatic
 
    output:
-   set id,file("${id}_R1_paired.fastq.gz"), file("${id}_R2_paired.fastq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan
+   set id,file("${id}_R1_paired.fastq.gz"), file("${id}_R2_paired.fastq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju
 
    script:
 
@@ -167,6 +171,69 @@ process runMetaphlan {
    """
 
 }
+
+process runKaiju {
+
+   tag "${id}"
+
+   input:
+   set id,file(left_reads),file(right_reads) from inputKaiju
+
+   output:
+   set id,file(kaiju_out) into inputKaijuReport
+
+   script:
+
+   kaiju_out = id + "_kaiju.out"
+
+   """
+	$KAIJU -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
+   """
+
+
+}
+
+process runKaijuReport {
+
+   tag "${id}"
+   publishDir "${OUTDIR}/Data/${id}/Kaiju"
+
+   input:
+   set id,file(kaiju_out) from inputKaijuReport
+
+   output:
+   set id,file(kaiju_report) into outputKaijuReport
+
+   script:
+   kaiju_report = id + "_kaiju_report.txt"
+
+   """
+	$KAIJU_REPORT -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
+   """
+
+   
+}
+
+
+process runMultiQCFastq {
+
+    tag "Generating fastq level summary and QC plots"
+    publishDir "${OUTDIR}/Summary/Fastqc"
+
+    input:
+    file('*') from outputFastqc.flatten().toList()
+
+    output:
+    file("fastq_multiqc*") into runMultiQCFastqOutput
+
+    script:
+
+    """
+    multiqc -n fastq_multiqc *.zip *.html
+    """
+}
+
+
 
 workflow.onComplete {
   log.info "========================================="
