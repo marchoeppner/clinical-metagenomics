@@ -1,3 +1,4 @@
+![](images/ikmb_bfx_logo.png)
 # IKMB Metagenomic profiling pipeline
 
 ## Overview
