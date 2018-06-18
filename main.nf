@@ -3,19 +3,14 @@
 OUTDIR = params.outdir 
 
 PATHOSCOPE_INDEX_DIR=file(params.pathoscope_index_dir)
-PATHOSCOPE=file(params.pathoscope)
 
-METAPHLAN=file(params.metaphlan)
 METAPHLAN_PKL=file(params.metaphlan_pkl)
 METAPHLAN_DB=params.metaphlan_db
 
-KAIJU=file(params.kaiju)
 KAIJU_REPORT=file(params.kaiju_report)
 KAIJU_DB=params.kaiju_db
 
-FASTQC=file(params.fastqc)
-
-TRIMMOMATIC = params.trimmomatic
+TRIMMOMATIC="/ifs/data/nfs_share/ikmb_repository/software/trimmomatic/0.36"
 leading = params.leading
 trailing = params.trailing
 slidingwindow = params.slidingwindow
@@ -54,6 +49,8 @@ process Merge {
         input:
         set id,forward_reads,reverse_reads from inputMerge
 
+	scratch true 
+
         output:
         set id,file(left_merged),file(right_merged) into inputTrimmomatic
 
@@ -81,7 +78,7 @@ process Trimmomatic {
    script:
 
     """
-        java -jar ${TRIMMOMATIC}/trimmomatic-0.36.jar PE -threads 8 $left_reads $right_reads \
+        trimmomatic PE -threads ${task.cpus} $left_reads $right_reads \
         ${id}_R1_paired.fastq.gz ${id}_1U.fastq.gz ${id}_R2_paired.fastq.gz ${id}_2U.fastq.gz \
         ILLUMINACLIP:${TRIMMOMATIC}/adapters/${adapters}:2:30:10:3:TRUE\
         LEADING:${leading} TRAILING:${trailing} SLIDINGWINDOW:${slidingwindow} MINLEN:${minlen} && sleep 5
@@ -102,7 +99,7 @@ process Fastqc {
 
     script:
     """
-    $FASTQC -t 1 -o . ${left_reads} ${right_reads}
+    fastqc -t 1 -o . ${left_reads} ${right_reads}
     """
 
 }
@@ -122,7 +119,7 @@ process runPathoscopeMap {
    pathoscope_sam = id + ".sam"
 
    """
-	$PATHOSCOPE MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_INDEX_DIR -filterIndexPrefixes hg19_rRNA \
+	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_INDEX_DIR -filterIndexPrefixes hg19_rRNA \
 	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $id -numThreads 8
    """
 
@@ -145,7 +142,7 @@ process runPathoscopeId {
    pathoscope_tsv = id + "-sam-report.tsv"
 
    """
-	$PATHOSCOPE ID -alignFile $samfile -fileType sam -expTag $id
+	pathoscope ID -alignFile $samfile -fileType sam -expTag $id
    """
 
 }
@@ -166,7 +163,7 @@ process runMetaphlan {
    metaphlan_out = id + "_metaphlan.out"
 
    """
-     $METAPHLAN --mpa_pkl $METAPHLAN_PKL --bowtie2db $METAPHLAN_DB --nproc 16 --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
+     metaphlan2.py --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
 
    """
 
@@ -187,7 +184,7 @@ process runKaiju {
    kaiju_out = id + "_kaiju.out"
 
    """
-	$KAIJU -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
+	kaiju -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
    """
 
 
@@ -208,7 +205,7 @@ process runKaijuReport {
    kaiju_report = id + "_kaiju_report.txt"
 
    """
-	$KAIJU_REPORT -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
+	kaijuReport -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
    """
 
    
