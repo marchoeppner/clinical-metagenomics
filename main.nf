@@ -10,14 +10,23 @@ METAPHLAN_DB=params.metaphlan_db
 KAIJU_REPORT=file(params.kaiju_report)
 KAIJU_DB=params.kaiju_db
 
-TRIMMOMATIC="/ifs/data/nfs_share/ikmb_repository/software/trimmomatic/0.36"
-leading = params.leading
-trailing = params.trailing
-slidingwindow = params.slidingwindow
-minlen = params.minlen
-adapters = params.adapters
+
+ARIBA_DB=file(params.ariba_db)
+
+REF = file(params.ref)
 
 FOLDER=file(params.folder)
+
+params.clip_r1 = 0
+params.clip_r2 = 0
+params.three_prime_clip_r1 = 0
+params.three_prime_clip_r2 = 0
+
+clip_r1 = params.clip_r1
+clip_r2 = params.clip_r2
+three_prime_clip_r1 = params.three_prime_clip_r1
+three_prime_clip_r2 = params.three_prime_clip_r2
+
 
 // Logging and reporting
 
@@ -52,7 +61,7 @@ process Merge {
 	scratch true 
 
         output:
-        set id,file(left_merged),file(right_merged) into inputTrimmomatic
+        set id,file(left_merged),file(right_merged) into inputTrimgalore
 
         script:
         left_merged = id + "_R1.fastq.gz"
@@ -64,50 +73,86 @@ process Merge {
         """
 }
 
-process Trimmomatic {
+process runTrimgalore {
 
-   tag "${id}"
-   publishDir "${OUTDIR}/trimmomatic", mode: 'copy'
+   tag "${id}|"
+   publishDir "${OUTDIR}/trimgalore", mode: 'copy',
+        saveAs: {filename ->
+            if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
+            else if (filename.indexOf("trimming_report.txt") > 0) "logs/$filename"
+            else params.saveTrimmed ? filename : null
+        }
 
    input:
-   set id,file(left_reads),file(right_reads) from inputTrimmomatic
+   set val(id),file(left),file(right) from inputTrimgalore
 
    output:
-   set id,file("${id}_R1_paired.fastq.gz"), file("${id}_R2_paired.fastq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju
+   set val(id),file("*val_1.fq.gz"),file("*val_2.fq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju,inputAriba,inputBwa
+   file "*trimming_report.txt" into trimgalore_results, trimgalore_logs 
+   file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
+   
+   script:
+
+    c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
+    c_r2 = clip_r2 > 0 ? "--clip_r2 ${clip_r2}" : ''
+    tpc_r1 = three_prime_clip_r1 > 0 ? "--three_prime_clip_r1 ${three_prime_clip_r1}" : ''
+    tpc_r2 = three_prime_clip_r2 > 0 ? "--three_prime_clip_r2 ${three_prime_clip_r2}" : ''
+
+    """
+    trim_galore --paired --fastqc --length 35 --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $left $right
+    """
+
+}
+
+process runBwa {
+
+   tag "${id}"
+   publishDir "${OUTDIR}/Host", mode: 'copy'
+
+   input:
+   set id,file(left),file(right) from inputBwa
+
+   output:
+   set id,file(bam) into alignedBam
+   set id,file(stats) into BamStats
 
    script:
 
-    """
-        trimmomatic PE -threads ${task.cpus} $left_reads $right_reads \
-        ${id}_R1_paired.fastq.gz ${id}_1U.fastq.gz ${id}_R2_paired.fastq.gz ${id}_2U.fastq.gz \
-        ILLUMINACLIP:${TRIMMOMATIC}/adapters/${adapters}:2:30:10:3:TRUE\
-        LEADING:${leading} TRAILING:${trailing} SLIDINGWINDOW:${slidingwindow} MINLEN:${minlen} && sleep 5
+   bam = id + ".bam"
+   stats = id + "_bwa_stats.txt"
+
+   """
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort - $id
+	samtools stats $bam > $stats
    """
 
 }
 
-process Fastqc {
+process runAriba {
 
    tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/FastQC/", mode: 'copy'
+   publishDir "${OUTDIR}/Ariba", mode: 'copy'
 
-    input:
-    set id, file(left_reads), file(right_reads) from inputFastqc
+   input:
+   set id,file(left),file(right) from inputAriba
 
-    output:
-    set file("*.zip"), file("*.html") into outputFastqc
+   output:
+   set id,file(report) into AribaReport
+    
+   script:
 
-    script:
-    """
-    fastqc -t 1 -o . ${left_reads} ${right_reads}
-    """
+   report = "report.${id}.tsv"
+
+   """
+        ariba run $ARIBA_DB $left $right out.${id}.run && cp out.${id}.run/report.tsv report.${id}.tsv
+   """  
 
 }
 
 process runPathoscopeMap {
 
    tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Pathoscope"
+   publishDir "${OUTDIR}/Data/${id}/Pathoscope", mode: 'copy'
 
    input:
    set id,file(left_reads),file(right_reads) from inputPathoscopeMap
@@ -128,7 +173,7 @@ process runPathoscopeMap {
 process runPathoscopeId {
 
    tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Pathoscope"
+   publishDir "${OUTDIR}/Data/${id}/Pathoscope", mode: 'copy'
 
    input:
    set id,file(samfile) from inputPathoscopeId
@@ -150,7 +195,7 @@ process runPathoscopeId {
 process runMetaphlan {
 
    tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Metaphlan2"
+   publishDir "${OUTDIR}/Data/${id}/Metaphlan2", mode: 'copy'
 
    input:
    set id,file(left_reads),file(right_reads) from inputMetaphlan
@@ -193,7 +238,7 @@ process runKaiju {
 process runKaijuReport {
 
    tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Kaiju"
+   publishDir "${OUTDIR}/Data/${id}/Kaiju", mode: 'copy'
 
    input:
    set id,file(kaiju_out) from inputKaijuReport
@@ -211,14 +256,13 @@ process runKaijuReport {
    
 }
 
-
 process runMultiQCFastq {
 
     tag "Generating fastq level summary and QC plots"
-    publishDir "${OUTDIR}/Summary/Fastqc"
+    publishDir "${OUTDIR}/Summary/Fastqc", mode: 'copy'
 
     input:
-    file('*') from outputFastqc.flatten().toList()
+    file('*') from trimgalore_fastqc_reports.flatten().toList()
 
     output:
     file("fastq_multiqc*") into runMultiQCFastqOutput

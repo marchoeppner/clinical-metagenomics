@@ -11,6 +11,10 @@ dependencies:
  - pathoscope=2.0.6
  - metaphlan2=2.7.7
  - kraken=0.10.5beta
- - trimmomatic=0.36
+ - trim-galore=0.4.4
  - kaiju=1.6.2
  - multiqc=1.5
+ - ariba=2.11.1
+ - bwa=0.7.15
+ - ruby=2.2.3
+
