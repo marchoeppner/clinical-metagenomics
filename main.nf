@@ -43,29 +43,26 @@ log.info "========================================="
 
 
 // Starting the workflow
-
-Channel
-        .fromFilePairs(FOLDER + "/*_R{1,2}_001.fastq.gz", flat: true)
-        .map { prefix, file1, file2 ->  tuple(prefix.substring(0,6), file1, file2) }
-        .groupTuple()
-        .set { inputMerge }
+Channel.from(inputFile)
+       	.splitCsv(sep: ';', header: true)
+	.map { patientID,sampleID,sampleType,read_type,platform,file1,file2 -> tuple(patientID,sampleID,file1,file2) }
+       	.set { inputMerge }
 
 process Merge {
 
-	tag "${id}"
-        publishDir("${OUTDIR}/Data/${id}")
+	tag "${patientID}|${sampleID}"
 
         input:
-        set id,forward_reads,reverse_reads from inputMerge
+        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
 
 	scratch true 
 
         output:
-        set id,file(left_merged),file(right_merged) into inputTrimgalore
+        set patientID,sampleID,file(left_merged),file(right_merged) into inputTrimgalore
 
         script:
-        left_merged = id + "_R1.fastq.gz"
-        right_merged = id + "_R2.fastq.gz"
+        left_merged = sampleID + "_R1.fastq.gz"
+        right_merged = sampleID + "_R2.fastq.gz"
 
         """
                 zcat ${forward_reads.join(" ")} | gzip > $left_merged
@@ -75,7 +72,7 @@ process Merge {
 
 process runTrimgalore {
 
-   tag "${id}|"
+   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/trimgalore", mode: 'copy',
         saveAs: {filename ->
             if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
@@ -84,10 +81,10 @@ process runTrimgalore {
         }
 
    input:
-   set val(id),file(left),file(right) from inputTrimgalore
+   set val(patientID),val(sampleID),file(left),file(right) from inputTrimgalore
 
    output:
-   set val(id),file("*val_1.fq.gz"),file("*val_2.fq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju,inputAriba,inputBwa
+   set val(patientID),val(sampleID),file("*val_1.fq.gz"),file("*val_2.fq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju,inputAriba,inputBwa
    file "*trimming_report.txt" into trimgalore_results, trimgalore_logs 
    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
    
@@ -106,23 +103,23 @@ process runTrimgalore {
 
 process runBwa {
 
-   tag "${id}"
+   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/Host", mode: 'copy'
 
    input:
-   set id,file(left),file(right) from inputBwa
+   set patientID,sampleID,file(left),file(right) from inputBwa
 
    output:
-   set id,file(bam) into alignedBam
-   set id,file(stats) into BamStats
+   set patientID,sampleID,file(bam) into alignedBam
+   set patientID,sampleID,file(stats) into BamStats
 
    script:
 
-   bam = id + ".bam"
-   stats = id + "_bwa_stats.txt"
+   bam = sampleID + ".bam"
+   stats = sampleID + "_bwa_stats.txt"
 
    """
-	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort - $id
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
 	samtools stats $bam > $stats
    """
 
@@ -130,11 +127,11 @@ process runBwa {
 
 process runAriba {
 
-   tag "${id}"
+   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/Ariba", mode: 'copy'
 
    input:
-   set id,file(left),file(right) from inputAriba
+   set patientID,sampleID,file(left),file(right) from inputAriba
 
    output:
    set id,file(report) into AribaReport
@@ -151,40 +148,40 @@ process runAriba {
 
 process runPathoscopeMap {
 
-   tag "${id}"
+   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/Data/${id}/Pathoscope", mode: 'copy'
 
    input:
-   set id,file(left_reads),file(right_reads) from inputPathoscopeMap
+   set patientID,sampleID,file(left_reads),file(right_reads) from inputPathoscopeMap
 
    output:
-   set id,file(pathoscope_sam) into inputPathoscopeId
+   set patientID,sampleID,file(pathoscope_sam) into inputPathoscopeId
 
    script:
-   pathoscope_sam = id + ".sam"
+   pathoscope_sam = sampleID + ".sam"
 
    """
 	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_INDEX_DIR -filterIndexPrefixes hg19_rRNA \
-	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $id -numThreads 8
+	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $sampleID -numThreads 8
    """
 
 }
 
 process runPathoscopeId {
 
-   tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Pathoscope", mode: 'copy'
+   tag "${patientID}|${sampleID}"
+   publishDir "${OUTDIR}/Data/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
 
    input:
-   set id,file(samfile) from inputPathoscopeId
+   set patientID,sampleID,file(samfile) from inputPathoscopeId
 
    output:
    set id,file(pathoscope_tsv),file(pathoscope_sam) into outputPathoscopeId
 
    script:
 
-   pathoscope_sam = "updated_" + samfile
-   pathoscope_tsv = id + "-sam-report.tsv"
+   //pathoscope_sam = "updated_" + samfile
+   pathoscope_tsv = sampleID + "-sam-report.tsv"
 
    """
 	pathoscope ID -alignFile $samfile -fileType sam -expTag $id
@@ -194,18 +191,18 @@ process runPathoscopeId {
 
 process runMetaphlan {
 
-   tag "${id}"
-   publishDir "${OUTDIR}/Data/${id}/Metaphlan2", mode: 'copy'
+   tag "${patientID}|${sampleID}"
+   publishDir "${OUTDIR}/Data/${patientID}/${sampleID}/Metaphlan2", mode: 'copy'
 
    input:
-   set id,file(left_reads),file(right_reads) from inputMetaphlan
+   set patientID,sampleID,file(left_reads),file(right_reads) from inputMetaphlan
 
    output:
-   set id,file(metaphlan_out) into outputMetaphlan
+   set patientID,sampleID,file(metaphlan_out) into outputMetaphlan
 
    script:
 
-   metaphlan_out = id + "_metaphlan.out"
+   metaphlan_out = sampleID + "_metaphlan.out"
 
    """
      metaphlan2.py --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
@@ -216,17 +213,17 @@ process runMetaphlan {
 
 process runKaiju {
 
-   tag "${id}"
+   tag "${patientID}|${sampleID}"
 
    input:
-   set id,file(left_reads),file(right_reads) from inputKaiju
+   set patientID,sampleID,file(left_reads),file(right_reads) from inputKaiju
 
    output:
-   set id,file(kaiju_out) into inputKaijuReport
+   set patientID,sampleID,file(kaiju_out) into inputKaijuReport
 
    script:
 
-   kaiju_out = id + "_kaiju.out"
+   kaiju_out = sampleID + "_kaiju.out"
 
    """
 	kaiju -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
@@ -237,17 +234,17 @@ process runKaiju {
 
 process runKaijuReport {
 
-   tag "${id}"
+   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/Data/${id}/Kaiju", mode: 'copy'
 
    input:
-   set id,file(kaiju_out) from inputKaijuReport
+   set patientID,sampleID,file(kaiju_out) from inputKaijuReport
 
    output:
-   set id,file(kaiju_report) into outputKaijuReport
+   set patientID,sampleID,file(kaiju_report) into outputKaijuReport
 
    script:
-   kaiju_report = id + "_kaiju_report.txt"
+   kaiju_report = sampleID + "_kaiju_report.txt"
 
    """
 	kaijuReport -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
