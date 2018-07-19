@@ -15,7 +15,7 @@ ARIBA_DB=file(params.ariba_db)
 
 REF = file(params.ref)
 
-FOLDER=file(params.folder)
+inputFile=file(params.samples)
 
 params.clip_r1 = 0
 params.clip_r2 = 0
@@ -32,11 +32,11 @@ three_prime_clip_r2 = params.three_prime_clip_r2
 
 logParams(params, "nextflow_parameters.txt")
 
-VERSION = "1.0" 
+params.version = "0.1" 
 // Header log info 
 
 log.info "=========================================" 
-log.info "IKMB pipeline version v${VERSION}" 
+log.info "IKMB pipeline version v${params.version}" 
 log.info "Nextflow Version: $workflow.nextflow.version" 
 log.info "Command Line: $workflow.commandLine" 
 log.info "=========================================" 
@@ -45,35 +45,12 @@ log.info "========================================="
 // Starting the workflow
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
-	.map { patientID,sampleID,sampleType,read_type,platform,file1,file2 -> tuple(patientID,sampleID,file1,file2) }
-       	.set { inputMerge }
-
-process Merge {
-
-	tag "${patientID}|${sampleID}"
-
-        input:
-        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
-
-	scratch true 
-
-        output:
-        set patientID,sampleID,file(left_merged),file(right_merged) into inputTrimgalore
-
-        script:
-        left_merged = sampleID + "_R1.fastq.gz"
-        right_merged = sampleID + "_R2.fastq.gz"
-
-        """
-                zcat ${forward_reads.join(" ")} | gzip > $left_merged
-		zcat ${reverse_reads.join(" ")} | gzip > $right_merged
-        """
-}
+       	.set { inputTrimgalore }
 
 process runTrimgalore {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/trimgalore", mode: 'copy',
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/trimgalore", mode: 'copy',
         saveAs: {filename ->
             if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
             else if (filename.indexOf("trimming_report.txt") > 0) "logs/$filename"
@@ -81,10 +58,10 @@ process runTrimgalore {
         }
 
    input:
-   set val(patientID),val(sampleID),file(left),file(right) from inputTrimgalore
+   set val(patientID),val(sampleID),val(sampleType),val(readType),val(platform),left,right from inputTrimgalore
 
    output:
-   set val(patientID),val(sampleID),file("*val_1.fq.gz"),file("*val_2.fq.gz") into inputFastqc,inputPathoscopeMap,inputMetaphlan,inputKaiju,inputAriba,inputBwa
+   set val(patientID),val(sampleID),file("*val_1.fq.gz"),file("*val_2.fq.gz") into trimgaloreOutput
    file "*trimming_report.txt" into trimgalore_results, trimgalore_logs 
    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
    
@@ -101,10 +78,34 @@ process runTrimgalore {
 
 }
 
+inputMerge = trimgaloreOutput.groupTuple(by: [0,1])
+
+process Merge {
+
+        tag "${patientID}|${sampleID}"
+
+        input:
+        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
+
+        scratch true
+
+        output:
+        set patientID,sampleID,file(left_merged),file(right_merged) into inputPathoscopeMap,inputBwa
+
+        script:
+        left_merged = sampleID + "_R1.fastq.gz"
+        right_merged = sampleID + "_R2.fastq.gz"
+
+        """
+                zcat ${forward_reads.join(" ")} | gzip > $left_merged
+                zcat ${reverse_reads.join(" ")} | gzip > $right_merged
+        """
+}
+
 process runBwa {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Host", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
 
    input:
    set patientID,sampleID,file(left),file(right) from inputBwa
@@ -125,23 +126,45 @@ process runBwa {
 
 }
 
+// We extract the reads not mapping to the host genome
+process extractUnmapped {
+
+   tag "${patientID}|${sampleID}"
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
+
+   input:
+   set patientID,sampleID,file(bam) from alignedBam
+
+   output:
+   set patientID,sampleID,file(left),file(right) into inputMetaphlan,inputKaiju,inputAriba
+  
+   script:
+   left = sampleID + "_R1.fastq.gz"
+   right = sampleID + "_R2.fastq.gz"
+
+   """
+	samtools fastq -f 4 -1 $left -2 $right $bam
+   """
+
+}
+
 process runAriba {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Ariba", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Ariba", mode: 'copy'
 
    input:
    set patientID,sampleID,file(left),file(right) from inputAriba
 
    output:
-   set id,file(report) into AribaReport
+   set patientID,sampleID,file(report) into AribaReport
     
    script:
 
-   report = "report.${id}.tsv"
+   report = "report.${sampleID}.tsv"
 
    """
-        ariba run $ARIBA_DB $left $right out.${id}.run && cp out.${id}.run/report.tsv report.${id}.tsv
+        ariba run $ARIBA_DB $left $right out.${sampleID}.run && cp out.${sampleID}.run/report.tsv report.${sampleID}.tsv
    """  
 
 }
@@ -149,7 +172,7 @@ process runAriba {
 process runPathoscopeMap {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Data/${id}/Pathoscope", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
 
    input:
    set patientID,sampleID,file(left_reads),file(right_reads) from inputPathoscopeMap
@@ -170,13 +193,13 @@ process runPathoscopeMap {
 process runPathoscopeId {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Data/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
 
    input:
    set patientID,sampleID,file(samfile) from inputPathoscopeId
 
    output:
-   set id,file(pathoscope_tsv),file(pathoscope_sam) into outputPathoscopeId
+   set patientID,sampleID,file(pathoscope_tsv) into outputPathoscopeId
 
    script:
 
@@ -184,7 +207,7 @@ process runPathoscopeId {
    pathoscope_tsv = sampleID + "-sam-report.tsv"
 
    """
-	pathoscope ID -alignFile $samfile -fileType sam -expTag $id
+	pathoscope ID -alignFile $samfile -fileType sam -expTag $sampleID
    """
 
 }
@@ -192,7 +215,7 @@ process runPathoscopeId {
 process runMetaphlan {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Data/${patientID}/${sampleID}/Metaphlan2", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Metaphlan2", mode: 'copy'
 
    input:
    set patientID,sampleID,file(left_reads),file(right_reads) from inputMetaphlan
@@ -235,7 +258,7 @@ process runKaiju {
 process runKaijuReport {
 
    tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/Data/${id}/Kaiju", mode: 'copy'
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Kaiju", mode: 'copy'
 
    input:
    set patientID,sampleID,file(kaiju_out) from inputKaijuReport
@@ -271,7 +294,20 @@ process runMultiQCFastq {
     """
 }
 
+process get_software_versions {
 
+    publishDir "${OUTDIR}/Summary"
+     
+    output:
+    file '*.txt' into software_versions_yaml
+
+    script:
+    
+    """
+    echo ${params.version} &> v_metagenomics_pipeline.txt
+    echo ${nextflow.version} &> v_nextflow.txt
+    """
+}
 
 workflow.onComplete {
   log.info "========================================="
