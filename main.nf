@@ -64,7 +64,8 @@ process runTrimgalore {
    set val(patientID),val(sampleID),file("*val_1.fq.gz"),file("*val_2.fq.gz") into trimgaloreOutput
    file "*trimming_report.txt" into trimgalore_results, trimgalore_logs 
    file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
-   
+   file "v_trimgalore.txt" into version_trimgalore
+
    script:
 
     c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
@@ -74,6 +75,7 @@ process runTrimgalore {
 
     """
     trim_galore --paired --fastqc --length 35 --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $left $right
+    trim_galore --version &> v_trimgalore.txt
     """
 
 }
@@ -112,16 +114,22 @@ process runBwa {
 
    output:
    set patientID,sampleID,file(bam) into alignedBam
-   set patientID,sampleID,file(stats) into BamStats
+   file(stats) into BamStats
+
+   file(samtools_version) into version_samtools
 
    script:
 
    bam = sampleID + ".bam"
    stats = sampleID + "_bwa_stats.txt"
 
+   samtools_version = "v_samtools.txt"
+
    """
+        samtools --version &> $samtools_version
 	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
 	samtools stats $bam > $stats
+	
    """
 
 }
@@ -157,11 +165,11 @@ process runAriba {
    set patientID,sampleID,file(left),file(right) from inputAriba
 
    output:
-   set patientID,sampleID,file(report) into AribaReport
-    
+   file(report) into AribaReport
+
    script:
 
-   report = "report.${sampleID}.tsv"
+   report = sampleID + "_report.txt"
 
    """
         ariba run $ARIBA_DB $left $right out.${sampleID}.run && cp out.${sampleID}.run/report.tsv report.${sampleID}.tsv
@@ -179,6 +187,7 @@ process runPathoscopeMap {
 
    output:
    set patientID,sampleID,file(pathoscope_sam) into inputPathoscopeId
+   file "v_pathoscope.txt" into version_pathoscope
 
    script:
    pathoscope_sam = sampleID + ".sam"
@@ -186,6 +195,7 @@ process runPathoscopeMap {
    """
 	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_INDEX_DIR -filterIndexPrefixes hg19_rRNA \
 	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $sampleID -numThreads 8
+	pathoscope --version &> v_pathoscope.txt
    """
 
 }
@@ -221,13 +231,15 @@ process runMetaphlan {
    set patientID,sampleID,file(left_reads),file(right_reads) from inputMetaphlan
 
    output:
-   set patientID,sampleID,file(metaphlan_out) into outputMetaphlan
+   file(metaphlan_out) into outputMetaphlan
+   file "v_metaphlan.txt" into version_metaphlan
 
    script:
 
-   metaphlan_out = sampleID + "_metaphlan.out"
+   metaphlan_out = sampleID + "_metaphlan_report.txt"
 
    """
+     metaphlan2.py --version &> v_metaphlan.txt
      metaphlan2.py --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
 
    """
@@ -264,7 +276,7 @@ process runKaijuReport {
    set patientID,sampleID,file(kaiju_out) from inputKaijuReport
 
    output:
-   set patientID,sampleID,file(kaiju_report) into outputKaijuReport
+   file(kaiju_report) into outputKaijuReport
 
    script:
    kaiju_report = sampleID + "_kaiju_report.txt"
@@ -274,6 +286,43 @@ process runKaijuReport {
    """
 
    
+}
+
+process makeReport {
+
+	tag "Generating Report|${patientID}|${sampleID}"
+	publishDir "${OUTDIR}/Reports"
+
+	input:
+	set patientID,sampleID,pathoscope from outputPathoscopeId
+	file(kaiju) from outputKaijuReport
+	file(metaphlan) from outputMetaphlan
+	file(ariba) from AribaReport
+	file(bwa) from BamStats
+
+	output:
+	file(report) into Report
+
+	script:
+	
+	json = patientID + "_" + sampleID + ".json"
+	report = patientID + "_" + sampleID + ".pdf"
+
+	"""
+		cp $baseDir/assets/*.tlf . 
+		ruby $baseDir/bin/pipeline2json.rb \
+			--ariba $ariba \
+			--metaphlan $metaphlan \
+			--pathoscope $pathoscope \
+			--kaiju $kaiju \
+			--patient_id $patientID \
+			--sample_id $sampleID \
+			--samplesheet $inputFile \
+			--bam-stats $bwa \
+			-o $json
+		ruby $baseDir/bin/json2report.rb -i $json -o $report
+	"""
+
 }
 
 process runMultiQCFastq {
@@ -291,21 +340,6 @@ process runMultiQCFastq {
 
     """
     multiqc -n fastq_multiqc *.zip *.html
-    """
-}
-
-process get_software_versions {
-
-    publishDir "${OUTDIR}/Summary"
-     
-    output:
-    file '*.txt' into software_versions_yaml
-
-    script:
-    
-    """
-    echo ${params.version} &> v_metagenomics_pipeline.txt
-    echo ${nextflow.version} &> v_nextflow.txt
     """
 }
 

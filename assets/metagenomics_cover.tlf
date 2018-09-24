@@ -1,0 +1,977 @@
+{
+  "version": "0.10.0",
+  "items": [
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 38,
+      "width": 318.6,
+      "height": 74,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 18,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Institut für Klinische Molekularbiologie",
+        "",
+        "Metagenomik Analyse"
+      ]
+    },
+    {
+      "id": "text",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 150,
+      "width": 62.6,
+      "height": 21,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Patient"
+      ]
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 170,
+      "width": 87.6,
+      "height": 20,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Auftraggeber"
+      ]
+    },
+    {
+      "id": "patient_name",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 165,
+      "y": 150,
+      "width": 237.1,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "ordered_by",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 165,
+      "y": 170,
+      "width": 237,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 130,
+      "width": 120,
+      "height": 23,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Analyse durchgeführt:"
+      ]
+    },
+    {
+      "id": "analysis_date",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 165,
+      "y": 130,
+      "width": 238.1,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 458.6,
+      "y": 268,
+      "width": 136.6,
+      "height": 100,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 14,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        ""
+      ]
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 250,
+      "width": 555.2,
+      "height": 24,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": 21,
+        "line-height-ratio": 1.5,
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Metagenomik stützt sich auf die Sequenzierung der Gesamt-DNA aus einer biologischen Probe "
+      ]
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 265,
+      "width": 552.7,
+      "height": 24,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "mit dem Ziel vorhandene Pathogene anhand ihrer genetischen Signaturen zu identifizieren."
+      ]
+    },
+    {
+      "id": "",
+      "type": "line",
+      "display": true,
+      "description": "",
+      "style": {
+        "border-color": "#a5a5a5",
+        "border-width": 1,
+        "border-style": "solid"
+      },
+      "x1": 42.5,
+      "y1": 215,
+      "x2": 552.7,
+      "y2": 216
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 225,
+      "width": 232.9,
+      "height": 21,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 14,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Erläuterung der Verfahrensweise"
+      ]
+    },
+    {
+      "id": "",
+      "type": "line",
+      "display": true,
+      "description": "",
+      "style": {
+        "border-color": "#bfbfbf",
+        "border-width": 1,
+        "border-style": "solid"
+      },
+      "x1": 42.5,
+      "y1": 112,
+      "x2": 402.1,
+      "y2": 112
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 305,
+      "width": 267.6,
+      "height": 24,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 14,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Übersicht der durchgeführten Leistungen"
+      ]
+    },
+    {
+      "id": "",
+      "type": "line",
+      "display": true,
+      "description": "",
+      "style": {
+        "border-color": "#a5a5a5",
+        "border-width": 1,
+        "border-style": "solid"
+      },
+      "x1": 42.5,
+      "y1": 290,
+      "x2": 552.7,
+      "y2": 290
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 460,
+      "width": 122.6,
+      "height": 19,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Pipeline version:"
+      ]
+    },
+    {
+      "id": "pipeline_version",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 460,
+      "width": 188.1,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "page-number",
+      "display": true,
+      "description": "",
+      "x": 275,
+      "y": 800.8,
+      "width": 24.6,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "center",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate"
+      },
+      "format": "{page}",
+      "target": ""
+    },
+    {
+      "id": "",
+      "type": "image",
+      "display": true,
+      "description": "",
+      "x": 412.7,
+      "y": 20,
+      "width": 140,
+      "height": 91,
+      "data": {
+        "mime-type": "image/png",
+        "base64": "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"
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 350,
+      "width": 146.1,
+      "height": 23,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Sequenzierungsplattform:"
+      ]
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 390,
+      "width": 133.1,
+      "height": 21,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Sequenzen generiert:"
+      ]
+    },
+    {
+      "id": "sequencer",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 350,
+      "width": 187,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "readcount",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 390,
+      "width": 188,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 410,
+      "width": 157.1,
+      "height": 19,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Anteil humaner Sequenzen:"
+      ]
+    },
+    {
+      "id": "host_reads",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 410,
+      "width": 188,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 330,
+      "width": 137,
+      "height": 18,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Biologische Probe:"
+      ]
+    },
+    {
+      "id": "sample",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 330,
+      "width": 187,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 435,
+      "width": 160.1,
+      "height": 21,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 14,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Details zur Auswertung:"
+      ]
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 370,
+      "width": 138.1,
+      "height": 18,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Sequenzierkonfiguration:"
+      ]
+    },
+    {
+      "id": "read_type",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 200,
+      "y": 370,
+      "width": 187,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "",
+      "type": "text",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 190,
+      "width": 104.6,
+      "height": 24,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": []
+      },
+      "texts": [
+        "Auftragsnummer:"
+      ]
+    },
+    {
+      "id": "order_number",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 165,
+      "y": 190,
+      "width": 237,
+      "height": 14,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 12,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    },
+    {
+      "id": "default",
+      "type": "list",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 495,
+      "width": 510.2,
+      "height": 288,
+      "header": {
+        "enabled": false,
+        "height": 0,
+        "translate": {
+          "x": 0,
+          "y": 7
+        },
+        "items": []
+      },
+      "detail": {
+        "height": 21,
+        "translate": {
+          "x": 0,
+          "y": -50.6
+        },
+        "items": [
+          {
+            "id": "table_text",
+            "type": "text-block",
+            "display": true,
+            "description": "",
+            "x": 45,
+            "y": 547.6,
+            "width": 499.6,
+            "height": 11,
+            "style": {
+              "font-family": [
+                "Helvetica"
+              ],
+              "font-size": 10,
+              "color": "#000000",
+              "text-align": "left",
+              "vertical-align": "top",
+              "line-height": "",
+              "line-height-ratio": "",
+              "letter-spacing": "",
+              "font-style": [],
+              "overflow": "truncate",
+              "word-wrap": "break-word"
+            },
+            "reference-id": "",
+            "value": "",
+            "multiple-line": false,
+            "format": {
+              "base": "",
+              "type": ""
+            }
+          }
+        ]
+      },
+      "page-footer": {
+        "enabled": false,
+        "height": 0,
+        "translate": {
+          "x": 0,
+          "y": -87.2
+        },
+        "items": []
+      },
+      "footer": {
+        "enabled": false,
+        "height": 0,
+        "translate": {
+          "x": 0,
+          "y": -130.4
+        },
+        "items": []
+      },
+      "content-height": 288,
+      "auto-page-break": true
+    },
+    {
+      "id": "header",
+      "type": "text-block",
+      "display": true,
+      "description": "",
+      "x": 42.5,
+      "y": 20,
+      "width": 344.6,
+      "height": 12.2,
+      "style": {
+        "font-family": [
+          "Helvetica"
+        ],
+        "font-size": 10,
+        "color": "#000000",
+        "text-align": "left",
+        "vertical-align": "top",
+        "line-height": "",
+        "line-height-ratio": "",
+        "letter-spacing": "",
+        "font-style": [],
+        "overflow": "truncate",
+        "word-wrap": "break-word"
+      },
+      "reference-id": "",
+      "value": "",
+      "multiple-line": false,
+      "format": {
+        "base": "",
+        "type": ""
+      }
+    }
+  ],
+  "state": {
+    "layout-guides": []
+  },
+  "title": "Pathoscope Report",
+  "report": {
+    "paper-type": "A4",
+    "orientation": "portrait",
+    "margin": [
+      20,
+      42.5,
+      20,
+      42.5
+    ]
+  }
+}
