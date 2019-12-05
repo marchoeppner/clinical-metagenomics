@@ -18,11 +18,13 @@ From:nfcore/base
     /opt/conda/bin/conda env create -f /environment.yml
     /opt/conda/bin/conda clean -a
 
-    mkdir -p /ifs
-    apt-get -y install procps
+    apt-get -y update
+    apt-get -y install procps build-essential
 
-    apt-get -y install ruby
-    gem install thinreports
+    apt-get -y install ruby ruby-dev imagemagick libmagickwand-dev
+    gem install thinreports gruff
+
+    mkdir -p /ifs
 
     mkdir -p /opt/trimmomatic && cd /opt/trimmomatic && wget http://www.usadellab.org/cms/uploads/supplementary/Trimmomatic/Trimmomatic-0.36.zip \
         && unzip Trimmomatic-0.36.zip && mv Trimmomatic-0.36 0.36 && rm Trimmomatic-0.36.zip
