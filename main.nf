@@ -2,27 +2,17 @@
 
 OUTDIR = params.outdir 
 
-PATHOSCOPE_INDEX_DIR=file(params.pathoscope_index_dir)
+PATHOSCOPE_DB=file(params.pathoscope_db)
 
-METAPHLAN_PKL=file(params.metaphlan_pkl)
-METAPHLAN_DB=params.metaphlan_db
+METAPHLAN_DB=file(params.metaphlan_db)
 
-//KAIJU_REPORT=file(params.kaiju_report)
-KAIJU_DB=params.kaiju_db
+KAIJU_DB=file(params.kaiju_db)
 
-
-ARIBA_DB=file(params.ariba_db)
-
-params.ariba = false
-
-REF = file(params.ref)
+KNEADDATA_DB = file(params.kneaddata_db)
 
 inputFile=file(params.samples)
 
-
 // Logging and reporting
-
-logParams(params, "nextflow_parameters.txt")
 
 params.version = "0.1" 
 // Header log info 
@@ -33,69 +23,46 @@ log.info "Nextflow Version: $workflow.nextflow.version"
 log.info "Command Line: $workflow.commandLine" 
 log.info "=========================================" 
 
-
 // Starting the workflow
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
-       	.set { inputFastp }
+       	.into { inputTrim; inputBwa }
 
-process runFastp {
-
-	tag "${patientID}|${sampleID}"
-
-	input:
-	set patientID, sampleID, sampleType, readType, platform, fastqR1, fastqR2 from inputFastp
-
-	output:
-	set patientID, sampleID, file(left), file(right) into fastpOutput
-	set file(html),file(json) into fastp_results
-
-	script:
-	left = file(fastqR1).getBaseName() + "_trimmed.fastq.gz"
-	right = file(fastqR2).getBaseName() + "_trimmed.fastq.gz"
-	json = file(fastqR1).getBaseName() + ".fastp.json"
-	html = file(fastqR1).getBaseName() + ".fastp.html"
-
-	"""
-		fastp --in1 $fastqR1 --in2 $fastqR2 --out1 $left --out2 $right -w ${task.cpus} -j $json -h $html --length_required 35 --cut_by_quality3
-	"""
-}
-
-inputMerge = fastpOutput.groupTuple(by: [0,1])
-
-process Merge {
-
-        tag "${patientID}|${sampleID}"
+process runKneaddata {
 
         input:
-        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
-
-        scratch true
+        set val(sampleID),file(reads) from inputTrim
 
         output:
-        set patientID,sampleID,file(left_merged),file(right_merged) into inputPathoscopeMap,inputBwa,inputMetaphlan,inputAriba
+        set val(sampleID),file("${outdir}/${left}"),file("${outdir}/${right}") into (inputMetaphlan,inputKaiju,inputPathoscopeMap)
 
-        script:
-        left_merged = sampleID + "_R1.fastq.gz"
-        right_merged = sampleID + "_R2.fastq.gz"
+       script:
+        left = sampleID + "_R1_001_kneaddata_paired_1.fastq.gz"
+        right = sampleID + "_R1_001_kneaddata_paired_2.fastq.gz"
+
+        outdir = "output"
 
         """
-                zcat ${forward_reads.join(" ")} | gzip > $left_merged
-                zcat ${reverse_reads.join(" ")} | gzip > $right_merged
+                kneaddata --input ${reads[0]} --input ${reads[1]} \
+                        -t ${task.cpus} \
+                        --reference-db $KNEADDATA_DB \
+                        --output $outdir \
+                        --trimmomatic $TRIMMOMATIC_DIR
+
+                cd $outdir
+                for i in \$(echo *paired_*.fastq); do gzip \$i ; done;
         """
+
 }
 
 process runBwa {
 
-   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
-
 
    input:
    set patientID,sampleID,file(left),file(right) from inputBwa
 
    output:
-   set patientID,sampleID,file(bam) into alignedBam
    file(stats) into BamStats
 
    script:
@@ -113,55 +80,9 @@ process runBwa {
 
 }
 
-// We extract the reads not mapping to the host genome
-process extractUnmapped {
-
-   tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
-
-   input:
-   set patientID,sampleID,file(bam) from alignedBam
-
-   output:
-   set patientID,sampleID,file(left),file(right) into inputKaiju
-  
-   script:
-   left = sampleID + "_R1.fastq.gz"
-   right = sampleID + "_R2.fastq.gz"
-
-   """
-	samtools fastq -f 4 -1 $left -2 $right $bam
-   """
-
-}
-
-process runAriba {
-
-   tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/${patientID}/${sampleID}/Ariba", mode: 'copy'
-
-   input:
-   set patientID,sampleID,file(left),file(right) from inputAriba
-
-   output:
-   file(report) into AribaReport
-
-   when:
-   params.ariba == true
-
-   script:
-
-   report = sampleID + "_report.txt"
-
-   """
-        ariba run $ARIBA_DB $left $right out.${sampleID}.run && cp out.${sampleID}.run/report.tsv report.${sampleID}.tsv
-   """  
-
-}
 
 process runPathoscopeMap {
 
-   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
 
    input:
@@ -184,7 +105,6 @@ process runPathoscopeMap {
 
 process runPathoscopeId {
 
-   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Pathoscope", mode: 'copy'
 
    input:
@@ -206,7 +126,6 @@ process runPathoscopeId {
 
 process runMetaphlan {
 
-   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Metaphlan2", mode: 'copy'
 
    input:
@@ -230,8 +149,6 @@ process runMetaphlan {
 
 process runKaiju {
 
-   tag "${patientID}|${sampleID}"
-
    input:
    set patientID,sampleID,file(left_reads),file(right_reads) from inputKaiju
 
@@ -251,7 +168,6 @@ process runKaiju {
 
 process runKaijuReport {
 
-   tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Kaiju", mode: 'copy'
 
    input:
@@ -272,7 +188,6 @@ process runKaijuReport {
 
 process makeReport {
 
-	tag "Generating Report|${patientID}|${sampleID}"
 	publishDir "${OUTDIR}/Reports"
 
 	input:
