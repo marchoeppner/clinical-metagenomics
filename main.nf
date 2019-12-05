@@ -7,25 +7,17 @@ PATHOSCOPE_INDEX_DIR=file(params.pathoscope_index_dir)
 METAPHLAN_PKL=file(params.metaphlan_pkl)
 METAPHLAN_DB=params.metaphlan_db
 
-KAIJU_REPORT=file(params.kaiju_report)
+//KAIJU_REPORT=file(params.kaiju_report)
 KAIJU_DB=params.kaiju_db
 
 
 ARIBA_DB=file(params.ariba_db)
 
+params.ariba = false
+
 REF = file(params.ref)
 
 inputFile=file(params.samples)
-
-params.clip_r1 = 0
-params.clip_r2 = 0
-params.three_prime_clip_r1 = 0
-params.three_prime_clip_r2 = 0
-
-clip_r1 = params.clip_r1
-clip_r2 = params.clip_r2
-three_prime_clip_r1 = params.three_prime_clip_r1
-three_prime_clip_r2 = params.three_prime_clip_r2
 
 
 // Logging and reporting
@@ -45,42 +37,31 @@ log.info "========================================="
 // Starting the workflow
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
-       	.set { inputTrimgalore }
+       	.set { inputFastp }
 
-process runTrimgalore {
+process runFastp {
 
-   tag "${patientID}|${sampleID}"
-   publishDir "${OUTDIR}/${patientID}/${sampleID}/trimgalore", mode: 'copy',
-        saveAs: {filename ->
-            if (filename.indexOf("_fastqc") > 0) "FastQC/$filename"
-            else if (filename.indexOf("trimming_report.txt") > 0) "logs/$filename"
-            else params.saveTrimmed ? filename : null
-        }
+	tag "${patientID}|${sampleID}"
 
-   input:
-   set val(patientID),val(sampleID),val(sampleType),val(readType),val(platform),left,right from inputTrimgalore
+	input:
+	set patientID, sampleID, sampleType, readType, platform, fastqR1, fastqR2 from inputFastp
 
-   output:
-   set val(patientID),val(sampleID),file("*val_1.fq.gz"),file("*val_2.fq.gz") into trimgaloreOutput
-   file "*trimming_report.txt" into trimgalore_results, trimgalore_logs 
-   file "*_fastqc.{zip,html}" into trimgalore_fastqc_reports
-   file "v_trimgalore.txt" into version_trimgalore
+	output:
+	set patientID, sampleID, file(left), file(right) into fastpOutput
+	set file(html),file(json) into fastp_results
 
-   script:
+	script:
+	left = file(fastqR1).getBaseName() + "_trimmed.fastq.gz"
+	right = file(fastqR2).getBaseName() + "_trimmed.fastq.gz"
+	json = file(fastqR1).getBaseName() + ".fastp.json"
+	html = file(fastqR1).getBaseName() + ".fastp.html"
 
-    c_r1 = clip_r1 > 0 ? "--clip_r1 ${clip_r1}" : ''
-    c_r2 = clip_r2 > 0 ? "--clip_r2 ${clip_r2}" : ''
-    tpc_r1 = three_prime_clip_r1 > 0 ? "--three_prime_clip_r1 ${three_prime_clip_r1}" : ''
-    tpc_r2 = three_prime_clip_r2 > 0 ? "--three_prime_clip_r2 ${three_prime_clip_r2}" : ''
-
-    """
-    trim_galore --paired --fastqc --length 35 --gzip $c_r1 $c_r2 $tpc_r1 $tpc_r2 $left $right
-    trim_galore --version &> v_trimgalore.txt
-    """
-
+	"""
+		fastp --in1 $fastqR1 --in2 $fastqR2 --out1 $left --out2 $right -w ${task.cpus} -j $json -h $html --length_required 35 --cut_by_quality3
+	"""
 }
 
-inputMerge = trimgaloreOutput.groupTuple(by: [0,1])
+inputMerge = fastpOutput.groupTuple(by: [0,1])
 
 process Merge {
 
@@ -92,7 +73,7 @@ process Merge {
         scratch true
 
         output:
-        set patientID,sampleID,file(left_merged),file(right_merged) into inputPathoscopeMap,inputBwa
+        set patientID,sampleID,file(left_merged),file(right_merged) into inputPathoscopeMap,inputBwa,inputMetaphlan,inputAriba
 
         script:
         left_merged = sampleID + "_R1.fastq.gz"
@@ -109,14 +90,13 @@ process runBwa {
    tag "${patientID}|${sampleID}"
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
 
+
    input:
    set patientID,sampleID,file(left),file(right) from inputBwa
 
    output:
    set patientID,sampleID,file(bam) into alignedBam
    file(stats) into BamStats
-
-   file(samtools_version) into version_samtools
 
    script:
 
@@ -126,7 +106,6 @@ process runBwa {
    samtools_version = "v_samtools.txt"
 
    """
-        samtools --version &> $samtools_version
 	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
 	samtools stats $bam > $stats
 	
@@ -144,7 +123,7 @@ process extractUnmapped {
    set patientID,sampleID,file(bam) from alignedBam
 
    output:
-   set patientID,sampleID,file(left),file(right) into inputMetaphlan,inputKaiju,inputAriba
+   set patientID,sampleID,file(left),file(right) into inputKaiju
   
    script:
    left = sampleID + "_R1.fastq.gz"
@@ -166,6 +145,9 @@ process runAriba {
 
    output:
    file(report) into AribaReport
+
+   when:
+   params.ariba == true
 
    script:
 
@@ -240,7 +222,7 @@ process runMetaphlan {
 
    """
      metaphlan2.py --version &> v_metaphlan.txt
-     metaphlan2.py --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
+     metaphlan2.py  --mpa_pkl  ${METAPHLAN_PKL} --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
 
    """
 
@@ -297,7 +279,6 @@ process makeReport {
 	set patientID,sampleID,pathoscope from outputPathoscopeId
 	file(kaiju) from outputKaijuReport
 	file(metaphlan) from outputMetaphlan
-	file(ariba) from AribaReport
 	file(bwa) from BamStats
 
 	output:
@@ -311,7 +292,6 @@ process makeReport {
 	"""
 		cp $baseDir/assets/*.tlf . 
 		ruby $baseDir/bin/pipeline2json.rb \
-			--ariba $ariba \
 			--metaphlan $metaphlan \
 			--pathoscope $pathoscope \
 			--kaiju $kaiju \
@@ -328,10 +308,10 @@ process makeReport {
 process runMultiQCFastq {
 
     tag "Generating fastq level summary and QC plots"
-    publishDir "${OUTDIR}/Summary/Fastqc", mode: 'copy'
+    publishDir "${OUTDIR}/Summary/Fastp", mode: 'copy'
 
     input:
-    file('*') from trimgalore_fastqc_reports.flatten().toList()
+    file('*') from fastp_results.flatten().toList()
 
     output:
     file("fastq_multiqc*") into runMultiQCFastqOutput
@@ -339,7 +319,7 @@ process runMultiQCFastq {
     script:
 
     """
-    multiqc -n fastq_multiqc *.zip *.html
+    multiqc -n fastq_multiqc *.json *.html
     """
 }
 
