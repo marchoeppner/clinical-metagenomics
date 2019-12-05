@@ -11,8 +11,6 @@ opts = OptionParser.new()
 opts.banner = "Reads Fastq files from a folder and writes a sample sheet to STDOUT"
 opts.separator ""
 opts.on("-f","--folder", "=FOLDER","Folder to scan") {|argument| options.folder = argument }
-opts.on("-t","--type","=SAMPLE_TYPE","Sample type") {|argument| options.source = argument }
-opts.on("-r","-read_type","=READ_TYPE","Read type") {|argument| options.read_type = argument }
 opts.on("-s","--sanity", "Perform sanity check of md5 sums") { options.sanity = true }
 opts.on("-h","--help","Display the usage information") {
  puts opts
@@ -32,7 +30,7 @@ groups = fastq_files.group_by{|f| f.split("/")[-1].split(/_L0/)[0] }
 warn "Building input sample sheet from FASTQ folder"
 warn "Performing sanity check on md5sums" if options.sanity
 
-puts "PatientID;SampleID;SampleType;ReadType;Platform;R1;R2"
+puts "PatientID;SampleID;Platform;R1;R2"
 
 #G00076-L2_S19_L003_R1_001.fastq.gz
 
@@ -59,7 +57,7 @@ groups.each do |group, files|
 		end
                 sample = group.split("-")[0]
 
-        	puts "Indiv_#{sample};Sample_#{sample};#{options.source};#{options.read_type};Illumina;#{left};#{right}"
+        	puts "Indiv_#{sample};Sample_#{sample};Illumina;#{left};#{right}"
 	end
 end
 

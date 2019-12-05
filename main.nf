@@ -10,6 +10,10 @@ KAIJU_DB=file(params.kaiju_db)
 
 KNEADDATA_DB = file(params.kneaddata_db)
 
+TRIMMOMATIC_DIR = params.trimmomatic_dir
+
+REF = params.ref
+
 inputFile=file(params.samples)
 
 // Logging and reporting
@@ -24,6 +28,7 @@ log.info "Command Line: $workflow.commandLine"
 log.info "=========================================" 
 
 // Starting the workflow
+
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
        	.into { inputTrim; inputBwa }
@@ -31,10 +36,10 @@ Channel.from(inputFile)
 process runKneaddata {
 
         input:
-        set val(sampleID),file(reads) from inputTrim
+        set val(patientID),val(sampleID),file(reads) from inputTrim
 
         output:
-        set val(sampleID),file("${outdir}/${left}"),file("${outdir}/${right}") into (inputMetaphlan,inputKaiju,inputPathoscopeMap)
+        set val(patientID),val(sampleID),file("${outdir}/${left}"),file("${outdir}/${right}") into (inputMetaphlan,inputKaiju,inputPathoscopeMap)
 
        script:
         left = sampleID + "_R1_001_kneaddata_paired_1.fastq.gz"
@@ -133,15 +138,17 @@ process runMetaphlan {
 
    output:
    file(metaphlan_out) into outputMetaphlan
+   file(sam_out)
    file "v_metaphlan.txt" into version_metaphlan
 
    script:
 
    metaphlan_out = sampleID + "_metaphlan_report.txt"
+   sam_out = sampleID + "_metaphlan.sam.bz2"
 
    """
      metaphlan2.py --version &> v_metaphlan.txt
-     metaphlan2.py  --mpa_pkl  ${METAPHLAN_PKL} --bowtie2db $METAPHLAN_DB --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
+     metaphlan2.py $left_reads,$right_reads --bowtie2db $METAPHLAN_DB --samout $sam_out --bowtie2out $bowtie_out --nproc ${task.cpus} --input_type fastq -o $metaphlan_out
 
    """
 
@@ -218,24 +225,6 @@ process makeReport {
 		ruby $baseDir/bin/json2report.rb -i $json -o $report
 	"""
 
-}
-
-process runMultiQCFastq {
-
-    tag "Generating fastq level summary and QC plots"
-    publishDir "${OUTDIR}/Summary/Fastp", mode: 'copy'
-
-    input:
-    file('*') from fastp_results.flatten().toList()
-
-    output:
-    file("fastq_multiqc*") into runMultiQCFastqOutput
-
-    script:
-
-    """
-    multiqc -n fastq_multiqc *.json *.html
-    """
 }
 
 workflow.onComplete {

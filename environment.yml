@@ -12,3 +12,4 @@ dependencies:
  - kaiju=1.7.2
  - kneaddata=0.7.3
  - multiqc=1.7
+ - bwa
