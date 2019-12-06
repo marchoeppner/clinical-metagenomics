@@ -78,8 +78,8 @@ process runBwa {
    samtools_version = "v_samtools.txt"
 
    """
-	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
-	samtools stats $bam > $stats
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | /opt/samtools/1.9/bin/samtools sort -O BAM - > $bam
+	/opt/samtools/1.9/bin/samtools stats $bam > $stats
 	
    """
 
