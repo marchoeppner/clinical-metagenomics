@@ -10,6 +10,6 @@ dependencies:
  - metaphlan2=2.7.7
  - kraken=1.1.1
  - kaiju=1.7.2
- - kneaddata=0.7.3
+ - fastp=0.20.0
  - multiqc=1.7
  - bwa

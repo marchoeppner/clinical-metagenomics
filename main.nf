@@ -31,43 +31,63 @@ log.info "========================================="
 
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
-       	.into { inputTrim; inputBwa }
+       	.into { inputTrim  }
 
-process runKneaddata {
+process runFastp {
 
-        input:
-        set val(patientID),val(sampleID),file(reads) from inputTrim
+	input:
+        set patientID,sampleID,Platform,R1,R2 from inputTrim
 
         output:
-        set val(patientID),val(sampleID),file("${outdir}/${left}"),file("${outdir}/${right}") into (inputMetaphlan,inputKaiju,inputPathoscopeMap)
+        set patientID,sampleID,file("${left}"),file("${right}") into fastpOutput
 
-       script:
-        left = sampleID + "_R1_001_kneaddata_paired_1.fastq.gz"
-        right = sampleID + "_R1_001_kneaddata_paired_2.fastq.gz"
+	script:
+	
+	left = file(R1).getBaseName() + "_trimmed.fastq.gz"
+        right = file(R2).getBaseName() + "_trimmed.fastq.gz"
+        json = file(R1).getBaseName() + ".fastp.json"
+        html = file(R1).getBaseName() + ".fastp.html"
 
-        outdir = "output"
+	"""
+                fastp --in1 $R1 --in2 $R2 --out1 $left --out2 $right --detect_adapter_for_pe -w ${task.cpus} -j $json -h $html --length_required 35
+        """
+	
+}
+
+inputMerge = fastpOutput.groupTuple(by: [0,1])
+
+process Merge {
+
+        tag "${patientID}|${sampleID}"
+
+        input:
+        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
+
+        scratch true
+
+        output:
+        set patientID,sampleID,file(left_merged),file(right_merged) into inputBwa
+
+        script:
+        left_merged = sampleID + "_R1.fastq.gz"
+        right_merged = sampleID + "_R2.fastq.gz"
 
         """
-                kneaddata --input ${reads[0]} --input ${reads[1]} \
-                        -t ${task.cpus} \
-                        --reference-db $KNEADDATA_DB \
-                        --output $outdir \
-                        --trimmomatic $TRIMMOMATIC_DIR
-
-                cd $outdir
-                for i in \$(echo *paired_*.fastq); do gzip \$i ; done;
+                zcat ${forward_reads.join(" ")} | gzip > $left_merged
+                zcat ${reverse_reads.join(" ")} | gzip > $right_merged
         """
-
 }
 
 process runBwa {
 
    publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
 
+
    input:
    set patientID,sampleID,file(left),file(right) from inputBwa
 
    output:
+   set patientID,sampleID,file(bam) into alignedBam
    file(stats) into BamStats
 
    script:
@@ -78,13 +98,33 @@ process runBwa {
    samtools_version = "v_samtools.txt"
 
    """
-	bwa mem -M -t ${task.cpus} ${REF} $left $right | /opt/samtools/1.9/bin/samtools sort -O BAM - > $bam
-	/opt/samtools/1.9/bin/samtools stats $bam > $stats
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
+	samtools stats $bam > $stats
 	
    """
 
 }
 
+// We extract the reads not mapping to the host genome
+process extractUnmapped {
+
+   publishDir "${OUTDIR}/${patientID}/${sampleID}/Host", mode: 'copy'
+
+   input:
+   set patientID,sampleID,file(bam) from alignedBam
+
+   output:
+   set patientID,sampleID,file(left),file(right) into (inputPathoscopeMap,inputMetaphlan,inputKaiju)
+  
+   script:
+   left = sampleID + "_R1.fastq.gz"
+   right = sampleID + "_R2.fastq.gz"
+
+   """
+	samtools fastq -f 4 -1 $left -2 $right $bam
+   """
+
+}
 
 process runPathoscopeMap {
 
@@ -170,7 +210,6 @@ process runKaiju {
 	kaiju -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
    """
 
-
 }
 
 process runKaijuReport {
@@ -190,7 +229,6 @@ process runKaijuReport {
 	kaijuReport -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
    """
 
-   
 }
 
 process makeReport {
