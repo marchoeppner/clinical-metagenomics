@@ -8,10 +8,6 @@ METAPHLAN_DB=file(params.metaphlan_db)
 
 KAIJU_DB=file(params.kaiju_db)
 
-KNEADDATA_DB = file(params.kneaddata_db)
-
-TRIMMOMATIC_DIR = params.trimmomatic_dir
-
 REF = params.ref
 
 inputFile=file(params.samples)
