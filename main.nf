@@ -94,8 +94,8 @@ process runBwa {
    samtools_version = "v_samtools.txt"
 
    """
-	bwa mem -M -t ${task.cpus} ${REF} $left $right | samtools sort -O BAM - > $bam
-	samtools stats $bam > $stats
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | /opt/samtools/1.9/bin/samtools sort -O BAM - > $bam
+	/opt/samtools/1.9/bin/samtools stats $bam > $stats
 	
    """
 
@@ -117,7 +117,7 @@ process extractUnmapped {
    right = sampleID + "_R2.fastq.gz"
 
    """
-	samtools fastq -f 4 -1 $left -2 $right $bam
+	/opt/samtools/1.9/bin/samtools fastq -f 4 -1 $left -2 $right $bam
    """
 
 }
@@ -137,7 +137,7 @@ process runPathoscopeMap {
    pathoscope_sam = sampleID + ".sam"
 
    """
-	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_INDEX_DIR -filterIndexPrefixes hg19_rRNA \
+	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_DB -filterIndexPrefixes hg19_rRNA \
 	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $sampleID -numThreads 8
 	pathoscope --version &> v_pathoscope.txt
    """
@@ -175,12 +175,14 @@ process runMetaphlan {
    output:
    file(metaphlan_out) into outputMetaphlan
    file(sam_out)
+   file(bowtie_out)
    file "v_metaphlan.txt" into version_metaphlan
 
    script:
 
    metaphlan_out = sampleID + "_metaphlan_report.txt"
    sam_out = sampleID + "_metaphlan.sam.bz2"
+   bowtie_out = sampleID + "_bowtie.out"
 
    """
      metaphlan2.py --version &> v_metaphlan.txt
