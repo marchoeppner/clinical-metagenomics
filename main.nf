@@ -6,7 +6,6 @@ PATHOSCOPE_DB=file(params.pathoscope_db)
 
 METAPHLAN_DB=file(params.metaphlan_db)
 
-KAIJU_DB=file(params.kaiju_db)
 
 REF = params.ref
 
@@ -110,7 +109,7 @@ process extractUnmapped {
    set patientID,sampleID,file(bam) from alignedBam
 
    output:
-   set patientID,sampleID,file(left),file(right) into (inputPathoscopeMap,inputMetaphlan,inputKaiju)
+   set patientID,sampleID,file(left),file(right) into (inputPathoscopeMap,inputMetaphlan)
   
    script:
    left = sampleID + "_R1.fastq.gz"
@@ -192,50 +191,12 @@ process runMetaphlan {
 
 }
 
-process runKaiju {
-
-   input:
-   set patientID,sampleID,file(left_reads),file(right_reads) from inputKaiju
-
-   output:
-   set patientID,sampleID,file(kaiju_out) into inputKaijuReport
-
-   script:
-
-   kaiju_out = sampleID + "_kaiju.out"
-
-   """
-	kaiju -z 16 -t $KAIJU_DB/nodes.dmp -f $KAIJU_DB/kaiju_db.fmi -i <(gunzip -c $left_reads) -j <(gunzip -c $right_reads) -o $kaiju_out
-   """
-
-}
-
-process runKaijuReport {
-
-   publishDir "${OUTDIR}/${patientID}/${sampleID}/Kaiju", mode: 'copy'
-
-   input:
-   set patientID,sampleID,file(kaiju_out) from inputKaijuReport
-
-   output:
-   file(kaiju_report) into outputKaijuReport
-
-   script:
-   kaiju_report = sampleID + "_kaiju_report.txt"
-
-   """
-	kaijuReport -t $KAIJU_DB/nodes.dmp -n $KAIJU_DB/names.dmp -i $kaiju_out -r species -o $kaiju_report
-   """
-
-}
-
 process makeReport {
 
 	publishDir "${OUTDIR}/Reports"
 
 	input:
 	set patientID,sampleID,pathoscope from outputPathoscopeId
-	file(kaiju) from outputKaijuReport
 	file(metaphlan) from outputMetaphlan
 	file(bwa) from BamStats
 
@@ -252,7 +213,6 @@ process makeReport {
 		ruby $baseDir/bin/pipeline2json.rb \
 			--metaphlan $metaphlan \
 			--pathoscope $pathoscope \
-			--kaiju $kaiju \
 			--patient_id $patientID \
 			--sample_id $sampleID \
 			--samplesheet $inputFile \

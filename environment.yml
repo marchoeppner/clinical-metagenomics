@@ -7,9 +7,7 @@ channels:
  - bioconda
 dependencies:
  - pathoscope=2.0.6
- - metaphlan2=2.7.7
- - kraken=1.1.1
- - kaiju=1.6.3
+ - metaphlan2=2.9.5
  - fastp=0.20.0
  - multiqc=1.7
  - bwa
