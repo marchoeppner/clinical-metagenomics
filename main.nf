@@ -5,11 +5,21 @@ OUTDIR = params.outdir
 PATHOSCOPE_DB=file(params.pathoscope_db)
 
 METAPHLAN_DB=file(params.metaphlan_db)
-
+METAPHLAN_PKL = file(params.metaphlan_pkl)
 
 REF = params.ref
 
 inputFile=file(params.samples)
+
+params.clip_r1 = 0
+params.clip_r2 = 0
+params.three_prime_clip_r1 = 0
+params.three_prime_clip_r2 = 0
+
+clip_r1 = params.clip_r1
+clip_r2 = params.clip_r2
+three_prime_clip_r1 = params.three_prime_clip_r1
+three_prime_clip_r2 = params.three_prime_clip_r2
 
 // Logging and reporting
 
@@ -26,7 +36,7 @@ log.info "========================================="
 
 Channel.from(inputFile)
        	.splitCsv(sep: ';', header: true)
-       	.into { inputTrim  }
+       	.set { inputTrim  }
 
 process runFastp {
 
@@ -34,7 +44,7 @@ process runFastp {
         set patientID,sampleID,Platform,R1,R2 from inputTrim
 
         output:
-        set patientID,sampleID,file("${left}"),file("${right}") into fastpOutput
+        set patientID,sampleID,file("${left}"),file("${right}") into inputBwa
 
 	script:
 	
@@ -44,33 +54,11 @@ process runFastp {
         html = file(R1).getBaseName() + ".fastp.html"
 
 	"""
-                fastp --in1 $R1 --in2 $R2 --out1 $left --out2 $right --detect_adapter_for_pe -w ${task.cpus} -j $json -h $html --length_required 35
+                fastp --in1 $R1 --in2 $R2 --out1 $left --out2 $right \
+		--unpaired1 unpaired.fastq.gz --unpaired2 unpaired.fastq.gz \
+		--detect_adapter_for_pe -w ${task.cpus} -j $json -h $html --length_required 35
         """
 	
-}
-
-inputMerge = fastpOutput.groupTuple(by: [0,1])
-
-process Merge {
-
-        tag "${patientID}|${sampleID}"
-
-        input:
-        set patientID,sampleID,forward_reads,reverse_reads from inputMerge
-
-        scratch true
-
-        output:
-        set patientID,sampleID,file(left_merged),file(right_merged) into inputBwa
-
-        script:
-        left_merged = sampleID + "_R1.fastq.gz"
-        right_merged = sampleID + "_R2.fastq.gz"
-
-        """
-                zcat ${forward_reads.join(" ")} | gzip > $left_merged
-                zcat ${reverse_reads.join(" ")} | gzip > $right_merged
-        """
 }
 
 process runBwa {
@@ -93,7 +81,7 @@ process runBwa {
    samtools_version = "v_samtools.txt"
 
    """
-	bwa mem -M -t ${task.cpus} ${REF} $left $right | /opt/samtools/1.9/bin/samtools sort -O BAM - > $bam
+	bwa mem -M -t ${task.cpus} ${REF} $left $right | /opt/samtools/1.9/bin/samtools sort -m 16G -@4 -O BAM - > $bam
 	/opt/samtools/1.9/bin/samtools stats $bam > $stats
 	
    """
@@ -130,7 +118,6 @@ process runPathoscopeMap {
 
    output:
    set patientID,sampleID,file(pathoscope_sam) into inputPathoscopeId
-   file "v_pathoscope.txt" into version_pathoscope
 
    script:
    pathoscope_sam = sampleID + ".sam"
@@ -138,7 +125,6 @@ process runPathoscopeMap {
    """
 	pathoscope MAP -1 $left_reads -2 $right_reads -indexDir $PATHOSCOPE_DB -filterIndexPrefixes hg19_rRNA \
 	-targetIndexPrefix A-Lbacteria.fa,M-Zbacteria.fa,virus.fa -outAlign $pathoscope_sam -expTag $sampleID -numThreads 8
-	pathoscope --version &> v_pathoscope.txt
    """
 
 }
@@ -185,7 +171,7 @@ process runMetaphlan {
 
    """
      metaphlan2.py --version &> v_metaphlan.txt
-     metaphlan2.py $left_reads,$right_reads --bowtie2db $METAPHLAN_DB --samout $sam_out --bowtie2out $bowtie_out --nproc ${task.cpus} --input_type fastq -o $metaphlan_out
+     metaphlan2.py --mpa_pkl  $METAPHLAN_PKL --bowtie2db $METAPHLAN_DB --samout $sam_out --bowtie2out $bowtie_out --nproc ${task.cpus} --input_type fastq <(zcat $left_reads $right_reads ) > $metaphlan_out
 
    """
 

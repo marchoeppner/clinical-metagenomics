@@ -153,52 +153,6 @@ report.start_new_page layout: :tool do |page|
   
 end
 
-# Kaiju results
-report.start_new_page layout: :tool do |page|
-  
-  kaiju = json["kaiju"]
-  
-  page.item(:header).value("Patient: " + json["patient"])
-  
-  page.item(:title).value("Kaiju")  
-    
-  g = Gruff::Pie.new
-  g.title = "Prädizierte Bakterien/Viren"
-  g.theme_pastel
-  
-  #g.LABEL_MARGIN = 5
-  g.legend_font_size = 14
-  g.marker_font_size = 14
-  g.title_font_size = 24
-  
-  counter = 0
-  max = 10
-  
-  kaiju.each do |species,abundance|
-    next if counter > max
-    g.data(species,abundance.to_f)
-    counter += 1
-  end
-    
-  g.write("pie_#{sample_id}_kaiju.png")
-  page.item(:chart).src("pie_#{sample_id}_kaiju.png")
-  
-  page.item(:reference).value("https://github.com/bioinformatics-centre/kaiju\nPMID: 27071849")
-  
-  counter = 0
-  max = 10
-  
-  kaiju.each do |species,abundance|
-    next if counter > max
-    report.list.add_row do |row|
-  	  row.item(:species).value("#{species}")
-  	  row.item(:abundance).value("#{abundance}")
-    end
-    counter += 1
-  end
-  
-end
-
 if json.has_key?("ariba")
 
 	report.start_new_page layout: :ariba do |page|
