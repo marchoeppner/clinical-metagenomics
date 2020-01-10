@@ -97,14 +97,35 @@ process extractUnmapped {
    set patientID,sampleID,file(bam) from alignedBam
 
    output:
-   set patientID,sampleID,file(left),file(right) into (inputPathoscopeMap,inputMetaphlan)
-  
+   set patientID,sampleID,file(left),file(right) into inputMetaphlan
+   set patientID,sampleID,file(left),file(right) into inputBBmap
+     
    script:
    left = sampleID + "_R1.fastq.gz"
    right = sampleID + "_R2.fastq.gz"
 
    """
 	/opt/samtools/1.9/bin/samtools fastq -f 4 -1 $left -2 $right $bam
+   """
+
+}
+
+process runBBmapFix {
+
+
+   input:
+   set patientID,sampleID,file(left_reads),file(right_reads) from inputBBmap
+
+   output:
+   set patientID,sampleID,file(left_fixed),file(right_fixed) into inputPathoscopeMap
+
+   script:
+
+   left_fixed = left_reads.getBaseName() + ".fixed.fastq.gz'
+   right_fixed = right_reads.getBaseName() + ".fixed.fastq.gz'
+   
+   """
+	BBmap repair.sh in1=$left_reads in2=$right_reads out1=$left_fixed out2=$right_fixed outsingle=singletons.fastq.gz
    """
 
 }
@@ -215,29 +236,4 @@ workflow.onComplete {
   log.info "========================================="
 }
 
-
-
-
-//#############################################################################################################
-//#############################################################################################################
-//
-// FUNCTIONS
-//
-//#############################################################################################################
-//#############################################################################################################
-
-
-// ------------------------------------------------------------------------------------------------------------
-//
-// Read input file and save it into list of lists
-//
-// ------------------------------------------------------------------------------------------------------------
-def logParams(p, n) {
-  File file = new File(n)
-  file.write "Parameter:\tValue\n"
-
-  for(s in p) {
-     file << "${s.key}:\t${s.value}\n"
-  }
-}
 

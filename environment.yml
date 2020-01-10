@@ -11,3 +11,4 @@ dependencies:
  - fastp=0.20.0
  - multiqc=1.7
  - bwa
+ - bbmap=38.75
