@@ -6,7 +6,7 @@ COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH /opt/conda/envs/clinical-metagenomics-1.0/bin:/opt/ruby/2.4.9/bin:$PATH
 
-RUN apt-get -y update &&  apt-get -y install procps build-essential libssl-dev && apt-get -y install imagemagick libmagickwand-dev 
+RUN apt-get -y update &&  apt-get -y install procps build-essential libssl-dev libncurses5-dev && apt-get -y install imagemagick libmagickwand-dev 
 
 RUN cd /opt && \
     mkdir -p ruby && \
