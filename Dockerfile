@@ -8,7 +8,7 @@ ENV PATH /opt/conda/envs/clinical-metagenomics-1.0/bin:/opt/ruby/2.4.9/bin:$PATH
 
 RUN apt-get -y update &&  apt-get -y install procps build-essential && apt-get -y install imagemagick libmagickwand-dev 
 
-RUN cd /opt QQ \
+RUN cd /opt && \
     mkdir -p ruby && \
     cd ruby && \
     wget https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.9.tar.gz && \
