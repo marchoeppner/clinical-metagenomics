@@ -6,7 +6,7 @@ COPY environment.yml /
 RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH /opt/conda/envs/clinical-metagenomics-1.0/bin:/opt/ruby/2.4.9/bin:$PATH
 
-RUN apt-get -y update &&  apt-get -y install procps build-essential && apt-get -y install imagemagick libmagickwand-dev && gem install thinreports gruff
+RUN apt-get -y update &&  apt-get -y install procps build-essential && apt-get -y install imagemagick libmagickwand-dev 
 
 RUN cd /opt QQ \
     mkdir -p ruby && \
@@ -17,6 +17,8 @@ RUN cd /opt QQ \
     cd build && \
     ./configure --prefix=/opt/ruby/2.4.9 && make install && \
     cd /opt/ruby && rm -Rf build *.tar.gz 
+
+RUN gem install thinreports gruff
  
 RUN cd /opt && \
     mkdir -p samtools && \
