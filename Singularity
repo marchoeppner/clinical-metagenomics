@@ -7,7 +7,7 @@ From:nfcore/base
     VERSION 1.0
 
 %environment
-    PATH=/opt/conda/envs/clinical-metagenomics-1.0/bin:$PATH
+    PATH=/opt/conda/envs/clinical-metagenomics-1.0/bin:/opt/ruby/2.4.9/bin:$PATH
     export PATH
 
 %files
@@ -21,7 +21,18 @@ From:nfcore/base
     apt-get -y update
     apt-get -y install procps build-essential
 
-    apt-get -y install ruby ruby-dev imagemagick libmagickwand-dev libncurses5-dev
+    apt-get -y install imagemagick libmagickwand-dev libncurses5-dev
+
+    cd /opt && \
+    mkdir -p ruby && \
+    cd ruby && \
+    wget https://cache.ruby-lang.org/pub/ruby/2.4/ruby-2.4.9.tar.gz && \
+    tar -xvf ruby-2.4.9.tar.gz && \
+    mv ruby-2.4.9 build && \
+    cd build && \
+    ./configure --prefix=/opt/ruby/2.4.9 && make install && \
+    cd /opt/ruby && rm -Rf build *.tar.gz
+
     gem install thinreports gruff
 
     mkdir -p /ifs

@@ -121,8 +121,8 @@ process runBBmapFix {
 
    script:
 
-   left_fixed = left_reads.getBaseName() + ".fixed.fastq.gz'
-   right_fixed = right_reads.getBaseName() + ".fixed.fastq.gz'
+   left_fixed = left_reads.getBaseName() + ".fixed.fastq.gz"
+   right_fixed = right_reads.getBaseName() + ".fixed.fastq.gz"
    
    """
 	BBmap repair.sh in1=$left_reads in2=$right_reads out1=$left_fixed out2=$right_fixed outsingle=singletons.fastq.gz
