@@ -21,7 +21,7 @@ From:nfcore/base
     apt-get -y update
     apt-get -y install procps build-essential
 
-    apt-get -y install imagemagick libmagickwand-dev libncurses5-dev
+    apt-get -y install imagemagick libmagickwand-dev libncurses5-dev libssl-dev
 
     cd /opt && \
     mkdir -p ruby && \
@@ -33,7 +33,7 @@ From:nfcore/base
     ./configure --prefix=/opt/ruby/2.4.9 && make install && \
     cd /opt/ruby && rm -Rf build *.tar.gz
 
-    gem install thinreports gruff
+    /opt/conda/envs/clinical-metagenomics-1.0/bin/gem install thinreports gruff
 
     mkdir -p /ifs
 
