@@ -33,7 +33,7 @@ From:nfcore/base
     ./configure --prefix=/opt/ruby/2.4.9 && make install && \
     cd /opt/ruby && rm -Rf build *.tar.gz
 
-    /opt/conda/envs/clinical-metagenomics-1.0/bin/gem install thinreports gruff
+    /opt/ruby/2.4.9/bin/gem install thinreports gruff
 
     mkdir -p /ifs
 
